@@ -2,7 +2,7 @@ package widget
 
 import (
 	"strings"
-	"tui"
+	"github.com/SerenaFontaine/tui"
 )
 
 // Viewport is a scrollable text display widget.

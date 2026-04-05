@@ -1,6 +1,6 @@
 package widget
 
-import "tui"
+import "github.com/SerenaFontaine/tui"
 
 // ListItem represents a single item in a list.
 type ListItem struct {

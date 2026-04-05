@@ -6,8 +6,8 @@ import (
 	"log"
 	"math"
 
-	"tui"
-	"tui/widget"
+	"github.com/SerenaFontaine/tui"
+	"github.com/SerenaFontaine/tui/widget"
 )
 
 type app struct {

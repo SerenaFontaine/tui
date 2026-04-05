@@ -1,6 +1,6 @@
 package widget
 
-import "tui"
+import "github.com/SerenaFontaine/tui"
 
 // Dialog is a modal dialog box with a message and buttons.
 type Dialog struct {

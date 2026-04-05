@@ -1,6 +1,6 @@
 package widget
 
-import "tui"
+import "github.com/SerenaFontaine/tui"
 
 // FormField represents a single field in a form.
 type FormField struct {

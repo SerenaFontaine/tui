@@ -2,7 +2,7 @@ package widget
 
 import (
 	"time"
-	"tui"
+	"github.com/SerenaFontaine/tui"
 )
 
 // SpinnerStyle defines the frames of a spinner animation.

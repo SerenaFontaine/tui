@@ -1,6 +1,6 @@
 package widget
 
-import "tui"
+import "github.com/SerenaFontaine/tui"
 
 // Table renders a data table with headers and rows.
 type Table struct {

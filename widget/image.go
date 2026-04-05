@@ -2,7 +2,7 @@ package widget
 
 import (
 	"image"
-	"tui"
+	"github.com/SerenaFontaine/tui"
 )
 
 // Image displays an image using the Kitty Graphics Protocol.

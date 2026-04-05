@@ -7,8 +7,8 @@ import (
 	"math/rand"
 	"time"
 
-	"tui"
-	"tui/widget"
+	"github.com/SerenaFontaine/tui"
+	"github.com/SerenaFontaine/tui/widget"
 )
 
 type tickMsg time.Time

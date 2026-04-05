@@ -1,6 +1,6 @@
 package widget
 
-import "tui"
+import "github.com/SerenaFontaine/tui"
 
 // TreeNode represents a node in a tree view.
 type TreeNode struct {

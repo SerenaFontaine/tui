@@ -1,6 +1,6 @@
 package widget
 
-import "tui"
+import "github.com/SerenaFontaine/tui"
 
 // Gauge is a full-width progress gauge with a label overlay.
 type Gauge struct {

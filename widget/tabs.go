@@ -1,6 +1,6 @@
 package widget
 
-import "tui"
+import "github.com/SerenaFontaine/tui"
 
 // Tabs renders a tab bar with selectable tabs.
 type Tabs struct {

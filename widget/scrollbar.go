@@ -1,6 +1,6 @@
 package widget
 
-import "tui"
+import "github.com/SerenaFontaine/tui"
 
 // Scrollbar renders a vertical or horizontal scrollbar.
 type Scrollbar struct {

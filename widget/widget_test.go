@@ -2,7 +2,7 @@ package widget
 
 import (
 	"testing"
-	"tui"
+	"github.com/SerenaFontaine/tui"
 )
 
 func newTestBuffer() *tui.Buffer {

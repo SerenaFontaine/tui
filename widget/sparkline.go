@@ -1,6 +1,6 @@
 package widget
 
-import "tui"
+import "github.com/SerenaFontaine/tui"
 
 // Sparkline renders a mini line chart using braille/block characters.
 type Sparkline struct {
