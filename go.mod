@@ -1,4 +1,4 @@
-module tui
+module github.com/SerenaFontaine/tui
 
 go 1.23.0
 
