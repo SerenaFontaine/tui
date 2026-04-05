@@ -20,6 +20,7 @@ support via [kgp](https://github.com/SerenaFontaine/kgp).
 - **Focus management** — Named focus tracking with tab navigation
 - **Mouse support** — SGR mouse tracking with press, release, motion, and scroll
 - **Suspend/Resume** — Ctrl+Z suspension with automatic state restore
+- **Custom I/O** — Pluggable input/output for embedding over SSH or other transports
 
 ## Installation
 
@@ -199,6 +200,27 @@ func (a *app) Update(msg tui.Msg) (tui.Component, tui.Cmd) {
 }
 ```
 
+### Custom I/O
+
+Run a TUI app over any `io.Reader`/`io.Writer` (e.g. an SSH session):
+
+```go
+app := tui.NewApp(myComponent,
+    tui.WithInput(session),
+    tui.WithOutput(session),
+    tui.WithSizeFunc(func() (int, int) {
+        return ptyWidth, ptyHeight
+    }),
+)
+
+// Push resize events externally
+app.Send(tui.ResizeMsg{Width: newW, Height: newH})
+
+app.Run()
+```
+
+When custom I/O is provided, raw mode and OS signal handling are skipped — the caller is responsible for terminal lifecycle management.
+
 ### Focus Management
 
 ```go
@@ -242,6 +264,8 @@ focus.Focus("input")             // focus by name
 | `Color` | Terminal color (ANSI, 256, RGB) |
 | `Rect` | Rectangle with split, intersect, padding operations |
 | `Block` | Border container with title |
+| `WithInput` / `WithOutput` | Custom I/O for embedding (SSH, etc.) |
+| `WithSizeFunc` | Custom terminal size provider |
 
 ### Layout
 

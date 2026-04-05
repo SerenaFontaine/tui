@@ -11,9 +11,12 @@ import (
 
 // Screen manages the terminal: raw mode, input parsing, and output.
 type Screen struct {
-	in       *os.File
-	out      *os.File
+	in       io.Reader
+	out      io.Writer
+	managed  bool // true when owning the local terminal
+	fd       int  // terminal fd for raw mode; -1 if unmanaged
 	oldState *term.State
+	sizeFunc func() (int, int)
 	events   chan Msg
 	done     chan struct{}
 }
@@ -21,19 +24,23 @@ type Screen struct {
 // newScreen creates a new screen attached to stdin/stdout.
 func newScreen() *Screen {
 	return &Screen{
-		in:     os.Stdin,
-		out:    os.Stdout,
-		events: make(chan Msg, 64),
-		done:   make(chan struct{}),
+		in:      os.Stdin,
+		out:     os.Stdout,
+		managed: true,
+		fd:      int(os.Stdin.Fd()),
+		events:  make(chan Msg, 64),
+		done:    make(chan struct{}),
 	}
 }
 
 // Start puts the terminal into raw mode and begins reading events.
 func (s *Screen) Start() error {
-	var err error
-	s.oldState, err = term.MakeRaw(int(s.in.Fd()))
-	if err != nil {
-		return err
+	if s.managed {
+		var err error
+		s.oldState, err = term.MakeRaw(s.fd)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Enter alternate screen, hide cursor, enable mouse SGR tracking
@@ -55,8 +62,8 @@ func (s *Screen) Stop() {
 	s.write("\x1b[?25h")   // show cursor
 	s.write("\x1b[?1049l") // leave alt screen
 
-	if s.oldState != nil {
-		term.Restore(int(s.in.Fd()), s.oldState)
+	if s.managed && s.oldState != nil {
+		term.Restore(s.fd, s.oldState)
 	}
 }
 
@@ -66,14 +73,16 @@ func (s *Screen) Suspend() {
 	s.write("\x1b[?1006l") // disable SGR mouse
 	s.write("\x1b[?25h")   // show cursor
 	s.write("\x1b[?1049l") // leave alt screen
-	if s.oldState != nil {
-		term.Restore(int(s.in.Fd()), s.oldState)
+	if s.managed && s.oldState != nil {
+		term.Restore(s.fd, s.oldState)
 	}
 }
 
 // Resume re-enters raw mode and alternate screen after suspension.
 func (s *Screen) Resume() {
-	s.oldState, _ = term.MakeRaw(int(s.in.Fd()))
+	if s.managed {
+		s.oldState, _ = term.MakeRaw(s.fd)
+	}
 	s.write("\x1b[?1049h") // alt screen
 	s.write("\x1b[?25l")   // hide cursor
 	s.write("\x1b[?1006h") // SGR mouse mode
@@ -92,11 +101,17 @@ func (s *Screen) ClearScreen() {
 
 // Size returns the current terminal dimensions.
 func (s *Screen) Size() (int, int) {
-	w, h, err := term.GetSize(int(s.out.Fd()))
-	if err != nil {
-		return 80, 24
+	if s.sizeFunc != nil {
+		return s.sizeFunc()
 	}
-	return w, h
+	if s.fd >= 0 {
+		w, h, err := term.GetSize(s.fd)
+		if err != nil {
+			return 80, 24
+		}
+		return w, h
+	}
+	return 80, 24
 }
 
 // Events returns the channel of parsed events.

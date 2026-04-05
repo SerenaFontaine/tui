@@ -19,5 +19,10 @@
 // and full integration with the Kitty Graphics Protocol for inline images
 // and animation via the [github.com/SerenaFontaine/kgp] package.
 //
+// By default, the framework manages the local terminal (raw mode, signals,
+// stdin/stdout). For custom environments such as SSH servers, use
+// [WithInput], [WithOutput], and [WithSizeFunc] to provide your own I/O.
+// When custom I/O is provided, raw mode and signal handling are skipped.
+//
 // Built-in widgets are available in the [tui/widget] sub-package.
 package tui

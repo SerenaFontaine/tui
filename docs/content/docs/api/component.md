@@ -61,6 +61,28 @@ For more control, create an `App` directly.
 | `WithAltScreen(bool)` | Enable alternate screen buffer (default: true) |
 | `WithMouseEnabled(bool)` | Enable mouse event tracking (default: true) |
 | `WithTitle(string)` | Set the terminal window title |
+| `WithInput(io.Reader)` | Custom input reader (disables raw mode and signal handling) |
+| `WithOutput(io.Writer)` | Custom output writer (disables raw mode and signal handling) |
+| `WithSizeFunc(func() (int, int))` | Custom terminal size function |
+
+### Custom I/O
+
+By default, the app reads from stdin, writes to stdout, manages raw mode, and listens for OS signals (SIGWINCH, SIGCONT). When `WithInput` or `WithOutput` is provided, the screen becomes **unmanaged**: raw mode is skipped, signal handling is disabled, and Ctrl+Z suspension is passed through as a normal key event.
+
+This is intended for embedding TUI applications in custom environments (e.g. an SSH server) where the caller controls the terminal lifecycle. Use `App.Send` to inject `ResizeMsg` from external sources:
+
+```go
+app := tui.NewApp(myComponent,
+    tui.WithInput(session),
+    tui.WithOutput(session),
+    tui.WithSizeFunc(func() (int, int) {
+        return ptyWidth, ptyHeight
+    }),
+)
+
+// Push resize events from the SSH window-change callback
+app.Send(tui.ResizeMsg{Width: newW, Height: newH})
+```
 
 ## Commands
 

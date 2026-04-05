@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"io"
 	"os"
 	"os/signal"
 	"sync"
@@ -31,6 +32,9 @@ type App struct {
 	altScreen    bool
 	mouseEnabled bool
 	title        string
+	input        io.Reader
+	output       io.Writer
+	sizeFunc     func() (int, int)
 }
 
 // Option configures the App.
@@ -51,6 +55,23 @@ func WithTitle(title string) Option {
 	return func(a *App) { a.title = title }
 }
 
+// WithInput sets a custom input reader instead of os.Stdin.
+// When set, the screen will not manage raw mode or signal handling.
+func WithInput(r io.Reader) Option {
+	return func(a *App) { a.input = r }
+}
+
+// WithOutput sets a custom output writer instead of os.Stdout.
+// When set, the screen will not manage raw mode or signal handling.
+func WithOutput(w io.Writer) Option {
+	return func(a *App) { a.output = w }
+}
+
+// WithSizeFunc sets a custom function to retrieve terminal dimensions.
+func WithSizeFunc(f func() (width, height int)) Option {
+	return func(a *App) { a.sizeFunc = f }
+}
+
 // Run creates an App for the given component and runs it.
 // This is the simplest way to start a TUI application.
 func Run(c Component, opts ...Option) error {
@@ -62,7 +83,6 @@ func Run(c Component, opts ...Option) error {
 func NewApp(c Component, opts ...Option) *App {
 	a := &App{
 		component:    c,
-		screen:       newScreen(),
 		cmds:         make(chan Cmd, 64),
 		msgs:         make(chan Msg, 64),
 		quit:         make(chan struct{}),
@@ -73,6 +93,30 @@ func NewApp(c Component, opts ...Option) *App {
 	for _, opt := range opts {
 		opt(a)
 	}
+
+	if a.input != nil || a.output != nil {
+		in := a.input
+		if in == nil {
+			in = os.Stdin
+		}
+		out := a.output
+		if out == nil {
+			out = os.Stdout
+		}
+		a.screen = &Screen{
+			in:       in,
+			out:      out,
+			managed:  false,
+			fd:       -1,
+			sizeFunc: a.sizeFunc,
+			events:   make(chan Msg, 64),
+			done:     make(chan struct{}),
+		}
+	} else {
+		a.screen = newScreen()
+		a.screen.sizeFunc = a.sizeFunc
+	}
+
 	return a
 }
 
@@ -88,10 +132,14 @@ func (a *App) Run() error {
 		a.screen.SetTitle(a.title)
 	}
 
-	// Handle SIGWINCH for terminal resize, SIGTSTP for suspend
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, syscall.SIGWINCH, syscall.SIGCONT)
-	defer signal.Stop(sigCh)
+	// Handle SIGWINCH for terminal resize, SIGTSTP for suspend.
+	// Only register signal handlers when managing the local terminal.
+	var sigCh chan os.Signal
+	if a.screen.managed {
+		sigCh = make(chan os.Signal, 1)
+		signal.Notify(sigCh, syscall.SIGWINCH, syscall.SIGCONT)
+		defer signal.Stop(sigCh)
+	}
 
 	// Initial size and render
 	a.width, a.height = a.screen.Size()
@@ -132,10 +180,12 @@ func (a *App) Run() error {
 			}
 
 		case msg := <-a.screen.Events():
-			// Handle suspend request
-			if km, ok := msg.(KeyMsg); ok && km.Type == KeyCtrlZ {
-				a.suspend()
-				continue
+			// Handle suspend request (only for managed terminals)
+			if a.screen.managed {
+				if km, ok := msg.(KeyMsg); ok && km.Type == KeyCtrlZ {
+					a.suspend()
+					continue
+				}
 			}
 			a.handleMsg(msg)
 			a.render()
