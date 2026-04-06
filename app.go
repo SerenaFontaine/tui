@@ -39,6 +39,11 @@ type App struct {
 	input        io.Reader
 	output       io.Writer
 	sizeFunc     func() (int, int)
+
+	// Terminal capabilities
+	capabilities    Capabilities
+	capabilitiesSet bool // true when set via WithCapabilities (skip detection)
+	theme           Theme // theme for placeholder rendering
 }
 
 // Option configures the App.
@@ -76,6 +81,19 @@ func WithSizeFunc(f func() (width, height int)) Option {
 	return func(a *App) { a.sizeFunc = f }
 }
 
+// WithCapabilities sets explicit terminal capabilities, skipping auto-detection.
+func WithCapabilities(c Capabilities) Option {
+	return func(a *App) {
+		a.capabilities = c
+		a.capabilitiesSet = true
+	}
+}
+
+// WithTheme sets the theme used for placeholder rendering.
+func WithTheme(t Theme) Option {
+	return func(a *App) { a.theme = t }
+}
+
 // Run creates an App for the given component and runs it.
 // This is the simplest way to start a TUI application.
 func Run(c Component, opts ...Option) error {
@@ -92,6 +110,7 @@ func NewApp(c Component, opts ...Option) *App {
 		quit:         make(chan struct{}),
 		altScreen:    true,
 		mouseEnabled: true,
+		theme:        DefaultTheme,
 		Images:       NewImageManager(),
 	}
 	for _, opt := range opts {
@@ -130,6 +149,9 @@ func (a *App) Run() error {
 		return err
 	}
 	defer a.screen.Stop()
+
+	// Detect terminal capabilities
+	a.detectCapabilities()
 
 	// Set window title if specified
 	if a.title != "" {
@@ -199,6 +221,12 @@ func (a *App) Run() error {
 			a.render()
 		}
 	}
+}
+
+// Capabilities returns the detected (or overridden) terminal capabilities.
+// Safe to call from any goroutine: capabilities are immutable after Run() begins.
+func (a *App) Capabilities() Capabilities {
+	return a.capabilities
 }
 
 // Send sends an external message to the application.
@@ -271,6 +299,9 @@ func (a *App) render() {
 	a.curr.Clear()
 	area := NewRect(0, 0, a.width, a.height)
 	a.component.Render(a.curr, area)
+
+	// Apply KGP fallbacks for unsupported capabilities
+	processFallbacks(a.curr, a.capabilities, a.theme)
 
 	// Diff and flush
 	output := a.curr.Diff(a.prev)

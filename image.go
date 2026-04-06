@@ -66,6 +66,10 @@ type ImagePlacement struct {
 	Virtual bool
 	// Response suppression mode
 	SuppressResponse kgp.ResponseSuppression
+	// Alt text for placeholder display when KGP is unavailable
+	alt string
+	// isAnimation marks this placement as part of an animation
+	isAnimation bool
 
 	// Relative positioning
 	RelativeParentID      uint32
@@ -260,6 +264,28 @@ func (p ImagePlacement) WithRelativeTo(parentID, parentPlaceID uint32, offsetH, 
 func (p ImagePlacement) WithResponseSuppression(mode kgp.ResponseSuppression) ImagePlacement {
 	p.SuppressResponse = mode
 	return p
+}
+
+// WithAlt sets alt text shown in the placeholder when KGP is unavailable.
+func (p ImagePlacement) WithAlt(text string) ImagePlacement {
+	p.alt = text
+	return p
+}
+
+// Alt returns the alt text for this placement.
+func (p ImagePlacement) Alt() string {
+	return p.alt
+}
+
+// WithAnimation marks this placement as an animation frame.
+func (p ImagePlacement) WithAnimation() ImagePlacement {
+	p.isAnimation = true
+	return p
+}
+
+// IsAnimation returns true if this placement is an animation.
+func (p ImagePlacement) IsAnimation() bool {
+	return p.isAnimation
 }
 
 // Encode generates the KGP escape sequences to display this image.

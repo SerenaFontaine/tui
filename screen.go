@@ -422,6 +422,33 @@ func (s *Screen) parseSS3(data []byte) (int, Msg) {
 	return 3, nil
 }
 
+// QueryAndRead sends a query string to the terminal and reads the response
+// with the given timeout. Returns the raw response bytes or an error on timeout.
+func (s *Screen) QueryAndRead(query string, timeout time.Duration) ([]byte, error) {
+	s.write(query)
+
+	responseCh := make(chan []byte, 1)
+	go func() {
+		buf := make([]byte, 256)
+		n, err := s.in.Read(buf)
+		if err != nil || n == 0 {
+			responseCh <- nil
+			return
+		}
+		responseCh <- buf[:n]
+	}()
+
+	select {
+	case resp := <-responseCh:
+		if resp == nil {
+			return nil, ErrQueryTimeout
+		}
+		return resp, nil
+	case <-time.After(timeout):
+		return nil, ErrQueryTimeout
+	}
+}
+
 func (s *Screen) sendEvent(msg Msg) {
 	select {
 	case s.events <- msg:

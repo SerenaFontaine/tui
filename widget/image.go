@@ -164,6 +164,7 @@ func (a *AnimatedImage) Render(buf *tui.Buffer, area tui.Rect) {
 
 	// Place the base image
 	placement := tui.NewImagePlacement(inner.X, inner.Y, inner.Width, inner.Height).
-		WithImageID(a.imageID)
+		WithImageID(a.imageID).
+		WithAnimation()
 	buf.AddImage(placement)
 }
