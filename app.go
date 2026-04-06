@@ -28,6 +28,10 @@ type App struct {
 	// Image manager
 	Images *ImageManager
 
+	// Tracks whether the terminal currently has KGP images rendered,
+	// independent of buffer swaps (survives prev = nil on resize/resume).
+	hasRenderedImages bool
+
 	// Options
 	altScreen    bool
 	mouseEnabled bool
@@ -274,9 +278,25 @@ func (a *App) render() {
 		a.screen.Flush(output)
 	}
 
-	// Render images via KGP
-	for _, img := range a.curr.Images {
-		a.screen.Flush(img.Encode())
+	// KGP image lifecycle: images persist in the terminal until
+	// explicitly deleted. Track whether we have active images across
+	// frames (survives prev = nil on resize/resume).
+	currHasImages := len(a.curr.Images) > 0
+
+	if a.hasRenderedImages && !currHasImages {
+		// Images were on screen but this frame has none — clean up.
+		a.screen.Flush(DeleteAllImages())
+		a.hasRenderedImages = false
+	} else if currHasImages {
+		// Delete previous placements before re-rendering so we don't
+		// accumulate stale images when the set changes between frames.
+		if a.hasRenderedImages {
+			a.screen.Flush(DeleteAllImages())
+		}
+		for _, img := range a.curr.Images {
+			a.screen.Flush(img.Encode())
+		}
+		a.hasRenderedImages = true
 	}
 
 	// Handle cursor

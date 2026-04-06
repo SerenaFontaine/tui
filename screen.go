@@ -191,6 +191,13 @@ func (s *Screen) parseInput(data []byte) {
 			continue
 		}
 
+		// Space
+		if data[0] == 0x20 {
+			s.sendEvent(KeyMsg{Type: KeySpace})
+			data = data[1:]
+			continue
+		}
+
 		// DEL (backspace on some terminals)
 		if data[0] == 0x7f {
 			s.sendEvent(KeyMsg{Type: KeyBackspace})
