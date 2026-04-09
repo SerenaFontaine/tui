@@ -2,6 +2,7 @@ package tui
 
 import (
 	"errors"
+	"os"
 	"time"
 )
 
@@ -84,6 +85,39 @@ func KonsoleCapabilities() Capabilities {
 	}
 }
 
+// GhosttyCapabilities returns the capability set for Ghostty.
+func GhosttyCapabilities() Capabilities {
+	return Capabilities{
+		KGP:           true,
+		Formats:       []ImageFormat{ImagePNG, ImageRGBA, ImageRGB},
+		Transmissions: []TransmitMethod{TransmitDirect, TransmitFromFile, TransmitFromTempFile, TransmitFromSharedMem},
+		Animation:     true,
+		Unicode:       true,
+	}
+}
+
+// FootCapabilities returns the capability set for foot.
+func FootCapabilities() Capabilities {
+	return Capabilities{
+		KGP:           true,
+		Formats:       []ImageFormat{ImagePNG, ImageRGBA, ImageRGB},
+		Transmissions: []TransmitMethod{TransmitDirect, TransmitFromFile, TransmitFromTempFile},
+		Animation:     false,
+		Unicode:       false,
+	}
+}
+
+// ITermCapabilities returns the capability set for iTerm2 (v3.5+).
+func ITermCapabilities() Capabilities {
+	return Capabilities{
+		KGP:           true,
+		Formats:       []ImageFormat{ImagePNG},
+		Transmissions: []TransmitMethod{TransmitDirect},
+		Animation:     false,
+		Unicode:       false,
+	}
+}
+
 // NoKGPCapabilities returns an empty capability set for terminals without KGP.
 func NoKGPCapabilities() Capabilities {
 	return Capabilities{}
@@ -93,6 +127,28 @@ func NoKGPCapabilities() Capabilities {
 // No-op if capabilities were set via WithCapabilities.
 func (a *App) detectCapabilities() {
 	if a.capabilitiesSet {
+		return
+	}
+
+	// Use preset capabilities for known terminals to avoid probe timeouts.
+	switch os.Getenv("TERM_PROGRAM") {
+	case "kitty":
+		a.capabilities = KittyCapabilities()
+		return
+	case "WezTerm":
+		a.capabilities = WezTermCapabilities()
+		return
+	case "konsole":
+		a.capabilities = KonsoleCapabilities()
+		return
+	case "ghostty":
+		a.capabilities = GhosttyCapabilities()
+		return
+	case "foot":
+		a.capabilities = FootCapabilities()
+		return
+	case "iTerm.app":
+		a.capabilities = ITermCapabilities()
 		return
 	}
 

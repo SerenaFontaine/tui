@@ -152,6 +152,105 @@ func TestKonsoleCapabilities(t *testing.T) {
 	}
 }
 
+func TestGhosttyCapabilities(t *testing.T) {
+	c := GhosttyCapabilities()
+	if !c.HasKGP() {
+		t.Error("Ghostty should have KGP")
+	}
+	if !c.Animation {
+		t.Error("Ghostty should support animation")
+	}
+	if !c.Unicode {
+		t.Error("Ghostty should support unicode placeholders")
+	}
+	if !c.SupportsFormat(ImagePNG) || !c.SupportsFormat(ImageRGBA) || !c.SupportsFormat(ImageRGB) {
+		t.Error("Ghostty should support PNG, RGBA, and RGB")
+	}
+	if !c.SupportsTransmission(TransmitDirect) || !c.SupportsTransmission(TransmitFromFile) ||
+		!c.SupportsTransmission(TransmitFromTempFile) || !c.SupportsTransmission(TransmitFromSharedMem) {
+		t.Error("Ghostty should support all transmission methods")
+	}
+}
+
+func TestFootCapabilities(t *testing.T) {
+	c := FootCapabilities()
+	if !c.HasKGP() {
+		t.Error("foot should have KGP")
+	}
+	if c.Animation {
+		t.Error("foot should not support animation")
+	}
+	if c.Unicode {
+		t.Error("foot should not support unicode placeholders")
+	}
+	if !c.SupportsFormat(ImagePNG) || !c.SupportsFormat(ImageRGBA) || !c.SupportsFormat(ImageRGB) {
+		t.Error("foot should support PNG, RGBA, and RGB")
+	}
+	if !c.SupportsTransmission(TransmitDirect) || !c.SupportsTransmission(TransmitFromFile) ||
+		!c.SupportsTransmission(TransmitFromTempFile) {
+		t.Error("foot should support direct, file, and temp file transmission")
+	}
+	if c.SupportsTransmission(TransmitFromSharedMem) {
+		t.Error("foot should not support shared memory")
+	}
+}
+
+func TestITermCapabilities(t *testing.T) {
+	c := ITermCapabilities()
+	if !c.HasKGP() {
+		t.Error("iTerm2 should have KGP")
+	}
+	if c.Animation {
+		t.Error("iTerm2 should not support animation")
+	}
+	if c.Unicode {
+		t.Error("iTerm2 should not support unicode placeholders")
+	}
+	if !c.SupportsFormat(ImagePNG) {
+		t.Error("iTerm2 should support PNG")
+	}
+	if c.SupportsFormat(ImageRGBA) || c.SupportsFormat(ImageRGB) {
+		t.Error("iTerm2 should not support RGBA or RGB")
+	}
+	if !c.SupportsTransmission(TransmitDirect) {
+		t.Error("iTerm2 should support direct transmission")
+	}
+	if c.SupportsTransmission(TransmitFromFile) || c.SupportsTransmission(TransmitFromTempFile) ||
+		c.SupportsTransmission(TransmitFromSharedMem) {
+		t.Error("iTerm2 should only support direct transmission")
+	}
+}
+
+func TestDetectCapabilitiesTermProgram(t *testing.T) {
+	tests := []struct {
+		name        string
+		termProgram string
+		wantKGP     bool
+		wantAnim    bool
+	}{
+		{"kitty", "kitty", true, true},
+		{"WezTerm", "WezTerm", true, false},
+		{"konsole", "konsole", true, false},
+		{"ghostty", "ghostty", true, true},
+		{"foot", "foot", true, false},
+		{"iTerm.app", "iTerm.app", true, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv("TERM_PROGRAM", tt.termProgram)
+			app := &App{}
+			app.detectCapabilities()
+
+			if app.capabilities.HasKGP() != tt.wantKGP {
+				t.Errorf("TERM_PROGRAM=%s: HasKGP() = %v, want %v", tt.termProgram, app.capabilities.HasKGP(), tt.wantKGP)
+			}
+			if app.capabilities.Animation != tt.wantAnim {
+				t.Errorf("TERM_PROGRAM=%s: Animation = %v, want %v", tt.termProgram, app.capabilities.Animation, tt.wantAnim)
+			}
+		})
+	}
+}
+
 func TestDetectCapabilitiesSkipsWhenSet(t *testing.T) {
 	app := &App{}
 	app.capabilitiesSet = true
