@@ -35,9 +35,9 @@ func renderPlaceholder(buf *Buffer, area Rect, alt string, isAnimation bool, the
 	label = "[" + label + "]"
 
 	// Truncate label if wider than inner area
-	if len(label) > inner.Width {
+	if StringWidth(label) > inner.Width {
 		if inner.Width >= 3 {
-			label = label[:inner.Width]
+			label = Truncate(label, inner.Width)
 		} else {
 			return // too small for any label
 		}
@@ -45,7 +45,7 @@ func renderPlaceholder(buf *Buffer, area Rect, alt string, isAnimation bool, the
 
 	// Center label on middle row
 	midY := inner.Y + inner.Height/2
-	startX := inner.X + (inner.Width-len(label))/2
+	startX := inner.X + (inner.Width-StringWidth(label))/2
 	labelStyle := NewStyle().Fg(theme.TextMuted)
 	buf.SetString(startX, midY, label, labelStyle)
 }

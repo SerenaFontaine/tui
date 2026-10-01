@@ -90,14 +90,10 @@ func (b Block) Render(buf *Buffer, area Rect) Rect {
 
 	// Title
 	if b.Title != "" && area.Width > 4 {
-		title := b.Title
-		maxLen := area.Width - 4
-		if len(title) > maxLen {
-			title = title[:maxLen]
-		}
+		title := Truncate(b.Title, area.Width-4)
 		buf.SetChar(area.X+1, area.Y, ' ', style)
-		buf.SetString(area.X+2, area.Y, title, style)
-		buf.SetChar(area.X+2+len(title), area.Y, ' ', style)
+		n := buf.SetString(area.X+2, area.Y, title, style)
+		buf.SetChar(area.X+2+n, area.Y, ' ', style)
 	}
 
 	// Return inner area (1 cell inset on all sides)

@@ -28,6 +28,8 @@ package main
 
 import (
     "log"
+    "unicode/utf8"
+
     "tui"
 )
 
@@ -46,9 +48,9 @@ func (a *app) Update(msg tui.Msg) (tui.Component, tui.Cmd) {
         case tui.KeyRune:
             a.message += string(msg.Rune)
         case tui.KeyBackspace:
-            if len(a.message) > 0 {
-                a.message = a.message[:len(a.message)-1]
-            }
+            // Remove the last rune, not the last byte
+            _, size := utf8.DecodeLastRuneInString(a.message)
+            a.message = a.message[:len(a.message)-size]
         }
     }
     return a, nil

@@ -137,10 +137,7 @@ func (t *Table) renderRow(buf *tui.Buffer, x, y, totalWidth int, cells []string,
 		if i >= len(cells) {
 			break
 		}
-		text := cells[i]
-		if len(text) > w {
-			text = text[:w]
-		}
+		text := tui.Truncate(cells[i], w)
 		buf.SetString(col, y, text, style)
 		col += w + 1 // +1 for gap
 		if col >= x+totalWidth {

@@ -1,6 +1,7 @@
 package widget
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/SerenaFontaine/tui"
@@ -55,6 +56,37 @@ func TestTextWithBlock(t *testing.T) {
 	// Text inside border
 	if buf.Get(1, 1).Char != 'H' {
 		t.Errorf("text inside block: (1,1) = %q, want 'H'", buf.Get(1, 1).Char)
+	}
+}
+
+func TestTextCenterWide(t *testing.T) {
+	buf := tui.NewBuffer(20, 1)
+	NewText("日本").SetAlignment(AlignCenter).Render(buf, tui.NewRect(0, 0, 20, 1))
+
+	// "日本" is 4 columns, centered in 20 → starts at 8
+	if buf.Get(8, 0).Char != '日' {
+		t.Errorf("(8,0) = %q, want '日'", buf.Get(8, 0).Char)
+	}
+}
+
+func TestSplitLines(t *testing.T) {
+	tests := []struct {
+		s     string
+		width int
+		want  []string
+	}{
+		{"abcd", 3, []string{"abc", "d"}},
+		{"abc\nd", 3, []string{"abc", "", "d"}},
+		{"日本語", 5, []string{"日本", "語"}},
+		{"a日本", 4, []string{"a日", "本"}},
+		{"日", 1, []string{""}}, // too wide to ever fit
+	}
+
+	for _, tt := range tests {
+		got := splitLines(tt.s, tt.width)
+		if !slices.Equal(got, tt.want) {
+			t.Errorf("splitLines(%q, %d) = %q, want %q", tt.s, tt.width, got, tt.want)
+		}
 	}
 }
 
@@ -155,6 +187,20 @@ func TestListVimKeys(t *testing.T) {
 	l, _ = l.Update(tui.KeyMsg{Type: tui.KeyRune, Rune: 'g'})
 	if l.Selected != 0 {
 		t.Error("'g' should go to start")
+	}
+}
+
+func TestListTruncateWide(t *testing.T) {
+	buf := tui.NewBuffer(10, 1)
+	l := NewList([]string{"日本語"})
+	l.Render(buf, tui.NewRect(0, 0, 5, 1))
+
+	// "日本語" is 6 columns; only "日本" fits in 5, and 語 is not split
+	if buf.Get(0, 0).Char != '日' || buf.Get(2, 0).Char != '本' {
+		t.Errorf("row = %q%q, want 日本", buf.Get(0, 0).Char, buf.Get(2, 0).Char)
+	}
+	if buf.Get(4, 0).Char != ' ' {
+		t.Errorf("(4,0) = %q, want ' '", buf.Get(4, 0).Char)
 	}
 }
 
@@ -305,6 +351,17 @@ func TestTreeCollapseExpand(t *testing.T) {
 	}
 }
 
+func TestTreeTruncateMultibyte(t *testing.T) {
+	buf := tui.NewBuffer(10, 1)
+	tree := NewTree(NewTreeNode("héllo"))
+	tree.Render(buf, tui.NewRect(0, 0, 4, 1))
+
+	// 2-column prefix leaves 2 columns: "hé", with é kept whole
+	if buf.Get(3, 0).Char != 'é' {
+		t.Errorf("(3,0) = %q, want 'é'", buf.Get(3, 0).Char)
+	}
+}
+
 // --- Dialog ---
 
 func TestDialogNavigation(t *testing.T) {
@@ -345,6 +402,15 @@ func TestFormValues(t *testing.T) {
 	}
 }
 
+func TestFormLabelWidthWide(t *testing.T) {
+	f := NewForm(NewFormField("名前", ""))
+
+	// "名前" is 4 columns, plus 2 for ": "
+	if f.LabelWidth != 6 {
+		t.Errorf("LabelWidth = %d, want 6", f.LabelWidth)
+	}
+}
+
 // --- Gauge ---
 
 func TestGaugeRender(t *testing.T) {
@@ -365,6 +431,21 @@ func TestGaugeRender(t *testing.T) {
 	}
 }
 
+func TestGaugeLabelWide(t *testing.T) {
+	buf := tui.NewBuffer(20, 1)
+	g := NewGauge().SetPercent(0.5).SetLabel("日本")
+	g.Render(buf, tui.NewRect(0, 0, 20, 1))
+
+	// "日本" is 4 columns, centered in 20 → starts at 8
+	if buf.Get(8, 0).Char != '日' || buf.Get(10, 0).Char != '本' {
+		t.Errorf("label = %q%q at 8,10, want 日本", buf.Get(8, 0).Char, buf.Get(10, 0).Char)
+	}
+	// The label keeps the fill style of the cells it covers
+	if buf.Get(8, 0).Style != g.FilledStyle || buf.Get(10, 0).Style != g.Style {
+		t.Error("label should take the fill style of each cell")
+	}
+}
+
 // --- Viewport ---
 
 func TestViewportScroll(t *testing.T) {
@@ -381,6 +462,26 @@ func TestViewportScroll(t *testing.T) {
 	v, _ = v.Update(tui.KeyMsg{Type: tui.KeyUp})
 	if v.YOffset != 0 {
 		t.Errorf("after Up, YOffset = %d, want 0", v.YOffset)
+	}
+}
+
+func TestWrapText(t *testing.T) {
+	tests := []struct {
+		s     string
+		width int
+		want  []string
+	}{
+		{"", 5, []string{""}},
+		{"abcd", 3, []string{"abc", "d"}},
+		{"ab\n\ncd", 5, []string{"ab", "", "cd"}},
+		{"日本語", 5, []string{"日本", "語"}},
+	}
+
+	for _, tt := range tests {
+		got := wrapText(tt.s, tt.width)
+		if !slices.Equal(got, tt.want) {
+			t.Errorf("wrapText(%q, %d) = %q, want %q", tt.s, tt.width, got, tt.want)
+		}
 	}
 }
 

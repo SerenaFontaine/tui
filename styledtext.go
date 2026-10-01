@@ -25,9 +25,7 @@ func NewStyledLine(spans ...Span) StyledLine {
 func (l StyledLine) Width() int {
 	w := 0
 	for _, s := range l.Spans {
-		for range s.Text {
-			w++
-		}
+		w += StringWidth(s.Text)
 	}
 	return w
 }
@@ -37,9 +35,12 @@ func (l StyledLine) Width() int {
 func (l StyledLine) Render(buf *Buffer, x, y int) int {
 	pos := x
 	for _, span := range l.Spans {
-		for _, ch := range span.Text {
-			buf.SetChar(pos, y, ch, span.Style)
-			pos++
+		n := buf.SetString(pos, y, span.Text, span.Style)
+		pos += n
+		// Stop at the buffer edge so later spans can't fill a gap left
+		// by a wide rune that didn't fit
+		if n < StringWidth(span.Text) {
+			break
 		}
 	}
 	return pos - x

@@ -23,9 +23,7 @@ func NewForm(fields ...FormField) *Form {
 	// Auto-calculate label width
 	maxLabel := 0
 	for _, f := range fields {
-		if len(f.Label) > maxLabel {
-			maxLabel = len(f.Label)
-		}
+		maxLabel = max(maxLabel, tui.StringWidth(f.Label))
 	}
 	if len(fields) > 0 {
 		fields[0].Input.Focused = true
@@ -131,10 +129,7 @@ func (f *Form) Render(buf *tui.Buffer, area tui.Rect) {
 		y := inner.Y + i
 
 		// Draw label
-		label := field.Label + ":"
-		if len(label) > f.LabelWidth {
-			label = label[:f.LabelWidth]
-		}
+		label := tui.Truncate(field.Label+":", f.LabelWidth)
 		buf.SetString(inner.X, y, label, f.LabelStyle)
 
 		// Draw input

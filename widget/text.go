@@ -52,12 +52,12 @@ func (t *Text) Render(buf *tui.Buffer, area tui.Rect) {
 		x := inner.X
 		switch t.Alignment {
 		case AlignCenter:
-			pad := (inner.Width - runeLen(line)) / 2
+			pad := (inner.Width - tui.StringWidth(line)) / 2
 			if pad > 0 {
 				x += pad
 			}
 		case AlignRight:
-			pad := inner.Width - runeLen(line)
+			pad := inner.Width - tui.StringWidth(line)
 			if pad > 0 {
 				x += pad
 			}
@@ -72,16 +72,27 @@ func splitLines(s string, maxWidth int) []string {
 	}
 	var lines []string
 	var current []rune
+	n := 0 // columns used by current
 	for _, r := range s {
 		if r == '\n' {
 			lines = append(lines, string(current))
-			current = current[:0]
+			current, n = current[:0], 0
 			continue
 		}
-		current = append(current, r)
-		if len(current) >= maxWidth {
+		w := tui.RuneWidth(r)
+		if w > maxWidth {
+			continue // can never fit
+		}
+		// A wide rune that would overflow starts the next line
+		if n+w > maxWidth {
 			lines = append(lines, string(current))
-			current = current[:0]
+			current, n = current[:0], 0
+		}
+		current = append(current, r)
+		n += w
+		if n >= maxWidth {
+			lines = append(lines, string(current))
+			current, n = current[:0], 0
 		}
 	}
 	if len(current) > 0 {
@@ -91,12 +102,4 @@ func splitLines(s string, maxWidth int) []string {
 		lines = []string{""}
 	}
 	return lines
-}
-
-func runeLen(s string) int {
-	n := 0
-	for range s {
-		n++
-	}
-	return n
 }

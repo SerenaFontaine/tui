@@ -58,9 +58,12 @@ text.Render(buf, area)
 
 ## Line Width
 
-Calculate the display width of a styled line:
+Calculate the display width of a styled line in columns. CJK characters and most emoji count as two:
 
 ```go
 line := tui.NewStyledLine(tui.PlainSpan("hello"), tui.BoldSpan(" world"))
 width := line.Width() // 11
+
+line = tui.NewStyledLine(tui.PlainSpan("日本"), tui.BoldSpan(" go"))
+width = line.Width() // 7
 ```

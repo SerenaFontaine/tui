@@ -62,22 +62,26 @@ func (g *Gauge) Render(buf *tui.Buffer, area tui.Rect) {
 	}
 
 	// Center the label
-	labelStart := inner.X + (inner.Width-len(label))/2
+	label = tui.Truncate(label, inner.Width)
+	labelStart := inner.X + (inner.Width-tui.StringWidth(label))/2
 
 	for y := inner.Y; y < inner.Bottom(); y++ {
 		for x := inner.X; x < inner.Right(); x++ {
-			style := g.Style
-			if x-inner.X < filled {
-				style = g.FilledStyle
-			}
+			buf.SetChar(x, y, ' ', g.styleAt(x-inner.X, filled))
+		}
 
-			ch := ' '
-			labelIdx := x - labelStart
-			if labelIdx >= 0 && labelIdx < len(label) {
-				ch = rune(label[labelIdx])
-			}
-
-			buf.SetChar(x, y, ch, style)
+		// Overlay the label, keeping the fill style of each cell it covers
+		x := labelStart
+		for _, ch := range label {
+			x += buf.SetString(x, y, string(ch), g.styleAt(x-inner.X, filled))
 		}
 	}
+}
+
+// styleAt returns the style for column col of a gauge with filled columns.
+func (g *Gauge) styleAt(col, filled int) tui.Style {
+	if col < filled {
+		return g.FilledStyle
+	}
+	return g.Style
 }

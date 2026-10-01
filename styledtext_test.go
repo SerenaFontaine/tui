@@ -38,6 +38,45 @@ func TestStyledLineRender(t *testing.T) {
 	}
 }
 
+func TestStyledLineWidthWide(t *testing.T) {
+	line := NewStyledLine(PlainSpan("日本"), BoldSpan("go"))
+	if line.Width() != 6 {
+		t.Errorf("line width = %d, want 6", line.Width())
+	}
+}
+
+func TestStyledLineRenderWide(t *testing.T) {
+	buf := NewBuffer(20, 1)
+	line := NewStyledLine(PlainSpan("日本"), BoldSpan("x"))
+	n := line.Render(buf, 0, 0)
+	if n != 5 {
+		t.Errorf("Render returned %d, want 5", n)
+	}
+
+	// Each wide rune takes two cells, so the next span starts at 4
+	if buf.Get(2, 0).Char != '本' {
+		t.Errorf("(2,0) = %q, want '本'", buf.Get(2, 0).Char)
+	}
+	if buf.Get(4, 0).Char != 'x' {
+		t.Errorf("(4,0) = %q, want 'x'", buf.Get(4, 0).Char)
+	}
+}
+
+func TestStyledLineRenderStopsAtEdge(t *testing.T) {
+	buf := NewBuffer(4, 1)
+	line := NewStyledLine(PlainSpan("a日本"), PlainSpan("x"))
+	n := line.Render(buf, 0, 0)
+
+	// "a日" fills columns 0-2; "本" needs 3-4 and doesn't fit, leaving a gap
+	// at 3 that "x" must not take
+	if n != 3 {
+		t.Errorf("Render returned %d, want 3", n)
+	}
+	if buf.Get(3, 0) != emptyCell {
+		t.Errorf("(3,0) = %q, want emptyCell", buf.Get(3, 0).Char)
+	}
+}
+
 func TestStyledTextRender(t *testing.T) {
 	buf := NewBuffer(20, 5)
 	text := NewStyledText(

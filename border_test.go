@@ -86,3 +86,33 @@ func TestBorderStyles(t *testing.T) {
 		}
 	}
 }
+
+func TestBlockRenderWideTitle(t *testing.T) {
+	b := NewBlock()
+	b.Title = "日本語"
+	buf := NewBuffer(8, 3)
+	b.Render(buf, NewRect(0, 0, 8, 3))
+
+	// Room for 4 columns: "日本", then the closing space, then the corner
+	if buf.Get(2, 0).Char != '日' || buf.Get(4, 0).Char != '本' {
+		t.Errorf("title = %q%q at 2,4, want 日本", buf.Get(2, 0).Char, buf.Get(4, 0).Char)
+	}
+	if buf.Get(6, 0).Char != ' ' {
+		t.Errorf("(6,0) = %q, want ' ' after title", buf.Get(6, 0).Char)
+	}
+	if buf.Get(7, 0).Char != BorderSingle.TopRight {
+		t.Errorf("(7,0) = %q, want top-right corner", buf.Get(7, 0).Char)
+	}
+}
+
+func TestBlockRenderMultibyteTitle(t *testing.T) {
+	b := NewBlock()
+	b.Title = "héllo"
+	buf := NewBuffer(6, 3)
+	b.Render(buf, NewRect(0, 0, 6, 3))
+
+	// Room for 2 columns: "hé", with é kept whole
+	if buf.Get(3, 0).Char != 'é' {
+		t.Errorf("(3,0) = %q, want 'é'", buf.Get(3, 0).Char)
+	}
+}

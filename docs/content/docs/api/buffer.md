@@ -36,6 +36,19 @@ buf.SetChar(x, y, '日', style)
 buf.SetChar(x+1, y, ' ', style) // continuation cell, not drawn
 ```
 
+Measure and truncate text by display width rather than `len`, which counts bytes:
+
+| Function | Description |
+|----------|-------------|
+| `RuneWidth(rune) int` | Columns a rune occupies (1 or 2) |
+| `StringWidth(string) int` | Columns a string occupies |
+| `Truncate(string, maxWidth) string` | Shorten to at most `maxWidth` columns without splitting a rune |
+
+```go
+title := tui.Truncate(name, area.Width-4)
+x := area.X + (area.Width-tui.StringWidth(title))/2  // center
+```
+
 ## Reading Content
 
 | Method | Description |

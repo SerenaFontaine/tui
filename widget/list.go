@@ -144,10 +144,7 @@ func (l *List) Render(buf *tui.Buffer, area tui.Rect) {
 			}
 		}
 
-		text := item.Text
-		if len(text) > inner.Width {
-			text = text[:inner.Width]
-		}
+		text := tui.Truncate(item.Text, inner.Width)
 		buf.SetString(inner.X, inner.Y+i, text, style)
 	}
 }

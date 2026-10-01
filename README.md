@@ -281,6 +281,14 @@ focus.Focus("input")             // focus by name
 | `Percent(p)` | Percentage of total |
 | `Min(n)` / `Max(n)` | Constrained sizing |
 
+### Text
+
+| Function | Description |
+|----------|-------------|
+| `StringWidth(s)` | Display width in columns (CJK and emoji count as 2) |
+| `Truncate(s, maxWidth)` | Shorten to a display width without splitting a rune |
+| `RuneWidth(r)` | Display width of a single rune |
+
 ### KGP Image
 
 | Function | Description |

@@ -178,12 +178,9 @@ func (t *Tree) Render(buf *tui.Buffer, area tui.Rect) {
 		}
 
 		n := buf.SetString(x, inner.Y+i, prefix, style)
-		text := fn.node.Text
 		maxLen := inner.Width - indent - n
 		if maxLen > 0 {
-			if len(text) > maxLen {
-				text = text[:maxLen]
-			}
+			text := tui.Truncate(fn.node.Text, maxLen)
 			buf.SetString(x+n, inner.Y+i, text, style)
 		}
 	}

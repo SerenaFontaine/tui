@@ -60,7 +60,7 @@ func (b *Buffer) SetChar(x, y int, ch rune, style Style) {
 func (b *Buffer) SetString(x, y int, s string, style Style) int {
 	written := 0
 	for _, ch := range s {
-		w := runeWidth(ch)
+		w := RuneWidth(ch)
 		if x+written+w > b.Width {
 			break
 		}
@@ -86,7 +86,7 @@ func (b *Buffer) SetStringInRect(s string, area Rect, style Style) int {
 			y++
 			continue
 		}
-		w := runeWidth(ch)
+		w := RuneWidth(ch)
 		if w > area.Width {
 			continue // can never fit
 		}
@@ -206,7 +206,7 @@ func (b *Buffer) Diff(prev *Buffer) string {
 			old := prev.Get(x, y)
 			// A wide rune covers x and x+1: redraw it if either half changed,
 			// and never emit the continuation cell
-			wide := x+1 < b.Width && runeWidth(curr.Char) == 2
+			wide := x+1 < b.Width && RuneWidth(curr.Char) == 2
 			if curr.Equal(old) && (!wide || b.Get(x+1, y).Equal(prev.Get(x+1, y))) {
 				if wide {
 					x++
@@ -270,7 +270,7 @@ func (b *Buffer) RenderFull() string {
 				styleSet = true
 			}
 			writeRune(&out, c.Char)
-			if x+1 < b.Width && runeWidth(c.Char) == 2 {
+			if x+1 < b.Width && RuneWidth(c.Char) == 2 {
 				x++ // skip the wide rune's continuation cell
 			}
 		}

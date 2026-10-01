@@ -113,7 +113,7 @@ func (d *Dialog) Render(buf *tui.Buffer, area tui.Rect) {
 	buttonY := inner.Bottom() - 1
 	totalBtnWidth := 0
 	for _, btn := range d.Buttons {
-		totalBtnWidth += len(btn) + 4 // [ btn ] + gap
+		totalBtnWidth += tui.StringWidth(btn) + 4 // [ btn ] + gap
 	}
 	btnX := inner.X + (inner.Width-totalBtnWidth)/2
 	if btnX < inner.X {
@@ -127,7 +127,7 @@ func (d *Dialog) Render(buf *tui.Buffer, area tui.Rect) {
 			style = d.SelectedButtonStyle
 		}
 		buf.SetString(btnX, buttonY, label, style)
-		btnX += len(label) + 1
+		btnX += tui.StringWidth(label) + 1
 	}
 }
 

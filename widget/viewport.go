@@ -150,19 +150,7 @@ func wrapText(s string, width int) []string {
 	var lines []string
 
 	for _, raw := range rawLines {
-		if len(raw) == 0 {
-			lines = append(lines, "")
-			continue
-		}
-		runes := []rune(raw)
-		for len(runes) > 0 {
-			end := width
-			if end > len(runes) {
-				end = len(runes)
-			}
-			lines = append(lines, string(runes[:end]))
-			runes = runes[end:]
-		}
+		lines = append(lines, splitLines(raw, width)...)
 	}
 
 	return lines

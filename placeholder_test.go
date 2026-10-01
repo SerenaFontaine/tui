@@ -93,3 +93,16 @@ func TestRenderPlaceholderMinimalArea(t *testing.T) {
 		t.Errorf("2x2 top-left = %q, want %q", buf.Get(0, 0).Char, BorderSingle.TopLeft)
 	}
 }
+
+func TestRenderPlaceholderWideLabel(t *testing.T) {
+	buf := NewBuffer(20, 10)
+	area := NewRect(0, 0, 20, 5)
+
+	renderPlaceholder(buf, area, "日本", false, DefaultTheme)
+
+	// Inner width is 18, "[日本]" is 6 columns, starts at 1 + (18-6)/2 = 7
+	midY := 5 / 2
+	if buf.Get(7, midY).Char != '[' || buf.Get(8, midY).Char != '日' || buf.Get(12, midY).Char != ']' {
+		t.Errorf("label = %q%q…%q, want [日…]", buf.Get(7, midY).Char, buf.Get(8, midY).Char, buf.Get(12, midY).Char)
+	}
+}
