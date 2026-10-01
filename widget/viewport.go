@@ -2,6 +2,7 @@ package widget
 
 import (
 	"strings"
+
 	"github.com/SerenaFontaine/tui"
 )
 

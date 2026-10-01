@@ -2,6 +2,7 @@ package widget
 
 import (
 	"time"
+
 	"github.com/SerenaFontaine/tui"
 )
 

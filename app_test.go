@@ -1,6 +1,11 @@
 package tui
 
-import "testing"
+import (
+	"bytes"
+	"strings"
+	"testing"
+	"time"
+)
 
 func TestWithCapabilitiesOption(t *testing.T) {
 	caps := KittyCapabilities()
@@ -85,5 +90,86 @@ func TestRenderCallsFallback(t *testing.T) {
 	}
 	if buf.Get(0, 0).Char != BorderSingle.TopLeft {
 		t.Error("placeholder should be rendered")
+	}
+}
+
+// sizeProbe records the render area and quits on the first ResizeMsg.
+type sizeProbe struct{ w, h int }
+
+func (s *sizeProbe) Init() Cmd { return nil }
+
+func (s *sizeProbe) Update(msg Msg) (Component, Cmd) {
+	if _, ok := msg.(ResizeMsg); ok {
+		return s, QuitCmd()
+	}
+	return s, nil
+}
+
+func (s *sizeProbe) Render(_ *Buffer, area Rect) { s.w, s.h = area.Width, area.Height }
+
+// runApp runs c with custom I/O, sends msg, and waits for the app to quit.
+// Returns everything written to the output.
+func runApp(t *testing.T, c Component, msg Msg, opts ...Option) string {
+	t.Helper()
+	in := &blockingReader{ch: make(chan struct{})}
+	defer close(in.ch)
+	var out bytes.Buffer
+	opts = append([]Option{
+		WithInput(in),
+		WithOutput(&out),
+		WithSizeFunc(func() (int, int) { return 80, 24 }),
+		WithCapabilities(NoKGPCapabilities()),
+	}, opts...)
+	app := NewApp(c, opts...)
+
+	done := make(chan error)
+	go func() { done <- app.Run() }()
+	app.Send(msg)
+
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Fatal(err)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("app did not quit")
+	}
+	return out.String()
+}
+
+func TestAppExternalResize(t *testing.T) {
+	probe := &sizeProbe{}
+	runApp(t, probe, ResizeMsg{Width: 120, Height: 40})
+
+	if probe.w != 120 || probe.h != 40 {
+		t.Errorf("rendered at %dx%d, want 120x40", probe.w, probe.h)
+	}
+}
+
+func TestAppMouseEnabledByDefault(t *testing.T) {
+	out := runApp(t, &sizeProbe{}, QuitMsg{})
+	if !strings.Contains(out, "\x1b[?1003h") {
+		t.Error("mouse tracking should be enabled by default")
+	}
+}
+
+func TestAppMouseDisabled(t *testing.T) {
+	out := runApp(t, &sizeProbe{}, QuitMsg{}, WithMouseEnabled(false))
+	if strings.Contains(out, "\x1b[?1003h") {
+		t.Error("mouse tracking should not be enabled with WithMouseEnabled(false)")
+	}
+}
+
+func TestAppDoubleQuit(t *testing.T) {
+	app := &App{quit: make(chan struct{})}
+
+	// Should not panic on a second close
+	app.handleMsg(QuitMsg{})
+	app.handleMsg(QuitMsg{})
+
+	select {
+	case <-app.quit:
+	default:
+		t.Error("quit channel should be closed")
 	}
 }

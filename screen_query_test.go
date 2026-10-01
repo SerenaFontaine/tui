@@ -2,6 +2,7 @@ package tui
 
 import (
 	"bytes"
+	"io"
 	"testing"
 	"time"
 )
@@ -43,3 +44,8 @@ func (r *slowReader) Read(p []byte) (int, error) {
 type nopWriter struct{}
 
 func (w *nopWriter) Write(p []byte) (int, error) { return len(p), nil }
+
+// blockingReader blocks until ch is closed, then reports EOF.
+type blockingReader struct{ ch chan struct{} }
+
+func (r *blockingReader) Read(p []byte) (int, error) { <-r.ch; return 0, io.EOF }

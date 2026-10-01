@@ -42,7 +42,7 @@ type App struct {
 
 	// Terminal capabilities
 	capabilities    Capabilities
-	capabilitiesSet bool // true when set via WithCapabilities (skip detection)
+	capabilitiesSet bool  // true when set via WithCapabilities (skip detection)
 	theme           Theme // theme for placeholder rendering
 }
 
@@ -145,6 +145,7 @@ func NewApp(c Component, opts ...Option) *App {
 
 // Run starts the application event loop. Blocks until the app quits.
 func (a *App) Run() error {
+	a.screen.mouse = a.mouseEnabled
 	if err := a.screen.Start(); err != nil {
 		return err
 	}
@@ -253,7 +254,12 @@ func (a *App) HideCursor() {
 func (a *App) handleMsg(msg Msg) {
 	switch msg.(type) {
 	case QuitMsg:
-		close(a.quit)
+		// Quits can race (e.g. a keypress and a disconnect), so only close once
+		select {
+		case <-a.quit:
+		default:
+			close(a.quit)
+		}
 		return
 	}
 
@@ -263,6 +269,13 @@ func (a *App) handleMsg(msg Msg) {
 			a.runCmd(cmd)
 		}
 		return
+	case ResizeMsg:
+		// Resizes pushed via Send (e.g. over SSH) never pass through SIGWINCH
+		if m.Width > 0 && m.Height > 0 && (m.Width != a.width || m.Height != a.height) {
+			a.width, a.height = m.Width, m.Height
+			a.curr.Resize(m.Width, m.Height)
+			a.prev = nil
+		}
 	case CursorMsg:
 		if m.Visible {
 			a.cursorX = m.X

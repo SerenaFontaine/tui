@@ -17,6 +17,7 @@ type Screen struct {
 	fd       int  // terminal fd for raw mode; -1 if unmanaged
 	oldState *term.State
 	sizeFunc func() (int, int)
+	mouse    bool // enable mouse tracking (see WithMouseEnabled)
 	events   chan Msg
 	done     chan struct{}
 }
@@ -46,8 +47,10 @@ func (s *Screen) Start() error {
 	// Enter alternate screen, hide cursor, enable mouse SGR tracking
 	s.write("\x1b[?1049h") // alt screen
 	s.write("\x1b[?25l")   // hide cursor
-	s.write("\x1b[?1006h") // SGR mouse mode
-	s.write("\x1b[?1003h") // all mouse tracking
+	if s.mouse {
+		s.write("\x1b[?1006h") // SGR mouse mode
+		s.write("\x1b[?1003h") // all mouse tracking
+	}
 
 	go s.readLoop()
 	return nil
@@ -57,8 +60,10 @@ func (s *Screen) Start() error {
 func (s *Screen) Stop() {
 	close(s.done)
 
-	s.write("\x1b[?1003l") // disable mouse tracking
-	s.write("\x1b[?1006l") // disable SGR mouse
+	if s.mouse {
+		s.write("\x1b[?1003l") // disable mouse tracking
+		s.write("\x1b[?1006l") // disable SGR mouse
+	}
 	s.write("\x1b[?25h")   // show cursor
 	s.write("\x1b[?1049l") // leave alt screen
 
@@ -69,8 +74,10 @@ func (s *Screen) Stop() {
 
 // Suspend temporarily leaves raw mode and alternate screen for suspension.
 func (s *Screen) Suspend() {
-	s.write("\x1b[?1003l") // disable mouse tracking
-	s.write("\x1b[?1006l") // disable SGR mouse
+	if s.mouse {
+		s.write("\x1b[?1003l") // disable mouse tracking
+		s.write("\x1b[?1006l") // disable SGR mouse
+	}
 	s.write("\x1b[?25h")   // show cursor
 	s.write("\x1b[?1049l") // leave alt screen
 	if s.managed && s.oldState != nil {
@@ -85,8 +92,10 @@ func (s *Screen) Resume() {
 	}
 	s.write("\x1b[?1049h") // alt screen
 	s.write("\x1b[?25l")   // hide cursor
-	s.write("\x1b[?1006h") // SGR mouse mode
-	s.write("\x1b[?1003h") // all mouse tracking
+	if s.mouse {
+		s.write("\x1b[?1006h") // SGR mouse mode
+		s.write("\x1b[?1003h") // all mouse tracking
+	}
 }
 
 // SetTitle sets the terminal window title.

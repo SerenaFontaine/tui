@@ -138,7 +138,7 @@ type rawRGBAImage struct {
 	width, height int
 }
 
-func (r *rawRGBAImage) ColorModel() color.Model  { return color.RGBAModel }
+func (r *rawRGBAImage) ColorModel() color.Model   { return color.RGBAModel }
 func (r *rawRGBAImage) Bounds() goimage.Rectangle { return goimage.Rect(0, 0, r.width, r.height) }
 func (r *rawRGBAImage) At(x, y int) color.Color {
 	if x < 0 || x >= r.width || y < 0 || y >= r.height {
@@ -154,7 +154,7 @@ type rawRGBImage struct {
 	width, height int
 }
 
-func (r *rawRGBImage) ColorModel() color.Model  { return color.RGBAModel }
+func (r *rawRGBImage) ColorModel() color.Model   { return color.RGBAModel }
 func (r *rawRGBImage) Bounds() goimage.Rectangle { return goimage.Rect(0, 0, r.width, r.height) }
 func (r *rawRGBImage) At(x, y int) color.Color {
 	if x < 0 || x >= r.width || y < 0 || y >= r.height {

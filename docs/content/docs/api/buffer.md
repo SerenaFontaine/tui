@@ -25,6 +25,17 @@ Typically you receive a buffer from the framework rather than creating one.
 | `DrawHLine(x, y, width, rune, Style)` | Draw horizontal line |
 | `DrawVLine(x, y, height, rune, Style)` | Draw vertical line |
 
+### Wide Characters
+
+CJK characters and most emoji are two columns wide. `SetString` and `SetStringInRect` handle this automatically: a wide rune takes its own cell plus a blank continuation cell, which rendering skips.
+
+When writing wide runes with `SetChar`, leave the next cell for the continuation:
+
+```go
+buf.SetChar(x, y, '日', style)
+buf.SetChar(x+1, y, ' ', style) // continuation cell, not drawn
+```
+
 ## Reading Content
 
 | Method | Description |

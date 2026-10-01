@@ -59,7 +59,7 @@ For more control, create an `App` directly.
 | Option | Description |
 |--------|-------------|
 | `WithAltScreen(bool)` | Enable alternate screen buffer (default: true) |
-| `WithMouseEnabled(bool)` | Enable mouse event tracking (default: true) |
+| `WithMouseEnabled(bool)` | Enable mouse event tracking (default: true); pass `false` to keep the terminal's native text selection |
 | `WithTitle(string)` | Set the terminal window title |
 | `WithInput(io.Reader)` | Custom input reader (disables raw mode and signal handling) |
 | `WithOutput(io.Writer)` | Custom output writer (disables raw mode and signal handling) |

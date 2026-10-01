@@ -2,6 +2,7 @@ package widget
 
 import (
 	"image"
+
 	"github.com/SerenaFontaine/tui"
 )
 

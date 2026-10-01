@@ -55,15 +55,17 @@ func (b *Buffer) SetChar(x, y int, ch rune, style Style) {
 }
 
 // SetString writes a string starting at (x, y) with the given style.
+// Wide runes (CJK, most emoji) take two cells.
 // Returns the number of cells written.
 func (b *Buffer) SetString(x, y int, s string, style Style) int {
 	written := 0
 	for _, ch := range s {
-		if x+written >= b.Width {
+		w := runeWidth(ch)
+		if x+written+w > b.Width {
 			break
 		}
-		b.SetChar(x+written, y, ch, style)
-		written++
+		b.setRune(x+written, y, ch, w, style)
+		written += w
 	}
 	return written
 }
@@ -84,17 +86,30 @@ func (b *Buffer) SetStringInRect(s string, area Rect, style Style) int {
 			y++
 			continue
 		}
-		if x >= area.Right() {
+		w := runeWidth(ch)
+		if w > area.Width {
+			continue // can never fit
+		}
+		if x+w > area.Right() {
 			x = area.X
 			y++
 			if y >= area.Bottom() {
 				break
 			}
 		}
-		b.SetChar(x, y, ch, style)
-		x++
+		b.setRune(x, y, ch, w, style)
+		x += w
 	}
 	return y - area.Y + 1
+}
+
+// setRune writes a rune of width w at (x, y). A wide rune also fills
+// x+1 with a blank continuation cell, which Diff and RenderFull skip.
+func (b *Buffer) setRune(x, y int, ch rune, w int, style Style) {
+	b.SetChar(x, y, ch, style)
+	if w == 2 {
+		b.SetChar(x+1, y, ' ', style)
+	}
 }
 
 // Fill fills a rectangular area with a cell.
@@ -189,7 +204,13 @@ func (b *Buffer) Diff(prev *Buffer) string {
 		for x := 0; x < b.Width; x++ {
 			curr := b.Get(x, y)
 			old := prev.Get(x, y)
-			if curr.Equal(old) {
+			// A wide rune covers x and x+1: redraw it if either half changed,
+			// and never emit the continuation cell
+			wide := x+1 < b.Width && runeWidth(curr.Char) == 2
+			if curr.Equal(old) && (!wide || b.Get(x+1, y).Equal(prev.Get(x+1, y))) {
+				if wide {
+					x++
+				}
 				continue
 			}
 
@@ -211,6 +232,9 @@ func (b *Buffer) Diff(prev *Buffer) string {
 			}
 
 			writeRune(&out, curr.Char)
+			if wide {
+				x++
+			}
 			lastX = x + 1
 			lastY = y
 		}
@@ -246,6 +270,9 @@ func (b *Buffer) RenderFull() string {
 				styleSet = true
 			}
 			writeRune(&out, c.Char)
+			if x+1 < b.Width && runeWidth(c.Char) == 2 {
+				x++ // skip the wide rune's continuation cell
+			}
 		}
 	}
 

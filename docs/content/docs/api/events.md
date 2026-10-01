@@ -80,7 +80,7 @@ type ResizeMsg struct {
 }
 ```
 
-Sent when the terminal dimensions change.
+Sent when the terminal dimensions change. With [custom I/O](/docs/api/component/#custom-io), no signal reports resizes, so send it yourself with `App.Send`; the app resizes its render buffers before passing it to your component.
 
 ## Lifecycle
 

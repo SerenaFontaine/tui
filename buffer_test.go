@@ -1,6 +1,9 @@
 package tui
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestBufferNew(t *testing.T) {
 	b := NewBuffer(10, 5)
@@ -176,5 +179,84 @@ func TestBufferSetStringInRect(t *testing.T) {
 	lines := b.SetStringInRect("hello world", area, Style{})
 	if lines < 1 {
 		t.Errorf("SetStringInRect should return lines used, got %d", lines)
+	}
+}
+
+func TestBufferDiffWideRune(t *testing.T) {
+	prev := NewBuffer(4, 1)
+	curr := NewBuffer(4, 1)
+	curr.SetChar(0, 0, '日', Style{})
+	curr.SetChar(1, 0, ' ', Style{})
+	curr.SetChar(2, 0, 'x', Style{})
+
+	// The continuation cell at x=1 must not be emitted
+	diff := curr.Diff(prev)
+	if strings.Contains(diff, "日 ") || !strings.Contains(diff, "日x") {
+		t.Errorf("Diff = %q, want 日 followed directly by x", diff)
+	}
+	if full := curr.RenderFull(); !strings.Contains(full, "日x ") {
+		t.Errorf("RenderFull = %q, want 日x followed by the last cell", full)
+	}
+	if diff := curr.Diff(curr); diff != "" {
+		t.Errorf("unchanged wide rune should produce empty diff, got %q", diff)
+	}
+}
+
+func TestBufferDiffWideRuneLastColumn(t *testing.T) {
+	prev := NewBuffer(3, 1)
+	curr := NewBuffer(3, 1)
+	curr.SetChar(2, 0, '日', Style{})
+
+	// A wide rune in the last column has no continuation cell to skip
+	if diff := curr.Diff(prev); !strings.Contains(diff, "日") {
+		t.Errorf("Diff = %q, want 日 in last column", diff)
+	}
+}
+
+func TestBufferSetStringWide(t *testing.T) {
+	b := NewBuffer(10, 1)
+	n := b.SetString(0, 0, "日本x", NewStyle())
+	if n != 5 {
+		t.Errorf("SetString returned %d, want 5", n)
+	}
+
+	// Each wide rune takes its cell plus a blank continuation cell
+	want := []rune{'日', ' ', '本', ' ', 'x'}
+	for i, ch := range want {
+		if c := b.Get(i, 0); c.Char != ch {
+			t.Errorf("Get(%d,0).Char = %q, want %q", i, c.Char, ch)
+		}
+	}
+	if full := b.RenderFull(); !strings.Contains(full, "日本x") {
+		t.Errorf("RenderFull = %q, want 日本x with no gaps", full)
+	}
+}
+
+func TestBufferSetStringWideTruncate(t *testing.T) {
+	b := NewBuffer(3, 1)
+	n := b.SetString(0, 0, "日本", NewStyle())
+	if n != 2 {
+		t.Errorf("SetString returned %d, want 2", n)
+	}
+	// Half a wide rune is never written
+	if c := b.Get(2, 0); c != emptyCell {
+		t.Errorf("Get(2,0) = %+v, want emptyCell", c)
+	}
+}
+
+func TestBufferSetStringInRectWide(t *testing.T) {
+	b := NewBuffer(10, 5)
+	area := NewRect(0, 0, 3, 5)
+	lines := b.SetStringInRect("日本", area, NewStyle())
+
+	// "日" fills 2 of 3 columns, so "本" wraps to the next line
+	if lines != 2 {
+		t.Errorf("SetStringInRect returned %d, want 2", lines)
+	}
+	if b.Get(0, 1).Char != '本' {
+		t.Errorf("Get(0,1).Char = %q, want '本'", b.Get(0, 1).Char)
+	}
+	if b.Get(3, 0) != emptyCell {
+		t.Error("SetStringInRect should not write outside area")
 	}
 }
