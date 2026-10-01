@@ -24,5 +24,6 @@
 // [WithInput], [WithOutput], and [WithSizeFunc] to provide your own I/O.
 // When custom I/O is provided, raw mode and signal handling are skipped.
 //
-// Built-in widgets are available in the [tui/widget] sub-package.
+// Built-in widgets are available in the
+// [github.com/SerenaFontaine/tui/widget] sub-package.
 package tui

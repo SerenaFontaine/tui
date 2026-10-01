@@ -3,7 +3,7 @@ title: Examples
 weight: 40
 ---
 
-Practical examples for common TUI use cases. All code is runnable and assumes you have imported `tui` and `tui/widget`.
+Practical examples for common TUI use cases. All code is runnable and assumes you have imported `github.com/SerenaFontaine/tui` and `github.com/SerenaFontaine/tui/widget`.
 
 ## Quick Navigation
 

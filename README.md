@@ -28,7 +28,7 @@ support via [kgp](https://github.com/SerenaFontaine/kgp).
 ## Installation
 
 ```bash
-go get tui
+go get github.com/SerenaFontaine/tui
 ```
 
 ## Quick Start
@@ -38,8 +38,9 @@ package main
 
 import (
     "log"
-    "tui"
-    "tui/widget"
+
+    "github.com/SerenaFontaine/tui"
+    "github.com/SerenaFontaine/tui/widget"
 )
 
 type app struct {

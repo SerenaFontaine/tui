@@ -12,7 +12,8 @@ package main
 
 import (
     "log"
-    "tui"
+
+    "github.com/SerenaFontaine/tui"
 )
 
 type app struct{}
@@ -42,8 +43,9 @@ package main
 
 import (
     "log"
-    "tui"
-    "tui/widget"
+
+    "github.com/SerenaFontaine/tui"
+    "github.com/SerenaFontaine/tui/widget"
 )
 
 type app struct {

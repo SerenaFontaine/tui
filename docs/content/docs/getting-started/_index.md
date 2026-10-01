@@ -8,7 +8,7 @@ weight: 10
 Add TUI to your Go module:
 
 ```bash
-go get tui
+go get github.com/SerenaFontaine/tui
 ```
 
 ## Requirements
@@ -30,7 +30,7 @@ import (
     "log"
     "unicode/utf8"
 
-    "tui"
+    "github.com/SerenaFontaine/tui"
 )
 
 type app struct {
@@ -75,8 +75,9 @@ package main
 
 import (
     "log"
-    "tui"
-    "tui/widget"
+
+    "github.com/SerenaFontaine/tui"
+    "github.com/SerenaFontaine/tui/widget"
 )
 
 type app struct {
